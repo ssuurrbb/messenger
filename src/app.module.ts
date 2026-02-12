@@ -8,6 +8,7 @@ import { User } from './users/user.entity';
 import { Chat } from './chats/chat.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AppService } from './app.service';
     UsersModule,
     AuthModule,
     ChatsModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
