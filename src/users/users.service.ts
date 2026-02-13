@@ -19,6 +19,12 @@ export class UsersService {
         return this.usersRepository.findOne({ where: { email } });
     } 
 
+    async findById(id: number): Promise<User | null> {
+        // Возвращает пользователя по id. Используется например в gateway,
+        // чтобы по userId найти сущность User перед сохранением сообщения.
+        return this.usersRepository.findOne({ where: { id } });
+    }
+
     async create(data: Partial<User>) {
         const hashedPassword = await bcrypt.hash(data.password, 10);
         const user = this.usersRepository.create({
