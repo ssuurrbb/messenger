@@ -10,12 +10,16 @@ async function bootstrap() {
     forbidNonWhitelisted: true
   }));
 
+  // Настройка CORS для HTTP и WebSocket
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
+    allowedHeaders: '*',
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  console.log(`🚀 Server running on http://localhost:${port}`);
 }
 bootstrap();

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './message.entity';
@@ -6,6 +6,7 @@ import { ChatMember } from 'src/chats/chat-member.entity';
 import { Chat } from 'src/chats/chat.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { User } from 'src/users/user.entity';
+import { CannotGetEntityManagerNotConnectedError } from 'typeorm/browser';
 
 @Injectable()
 export class MessagesService {
@@ -30,11 +31,11 @@ export class MessagesService {
         if (!chat) throw new NotFoundException('Chat not found');
 
         // Проверяем членство пользователя в чате и флаг banned
-        const member = await this.chatMembersRepository.findOne({  
-            where:{
-                chat:{id: dto.chatId},
-                user:{id: user.id},
-                banned:false
+        const member = await this.chatMembersRepository.findOne({
+            where: {
+                chat: { id: dto.chatId },
+                user: { id: user.id },
+                banned: false
             },
         });
         if (!member) throw new NotFoundException('You are not a member of this chat or you are banned');
@@ -49,7 +50,10 @@ export class MessagesService {
 
         // Возвращаем только нужные поля клиенту
         return {
-            sender:user.name,
+            id: message.id,
+            editedAt: message.editedAt,
+            sender: user.name,
+            senderId: user.id,
             text: message.text,
             createdAt: message.createdAt
         };
@@ -57,16 +61,16 @@ export class MessagesService {
 
     // Возвращает список сообщений чата в хронологическом порядке
     // Выполняет те же проверки членства, что и при создании сообщения
-    async getMessages(chatId: number, user:User){
+    async getMessages(chatId: number, user: User) {
         const chat = await this.chatsRepository.findOne({ where: { id: chatId } });
         if (!chat) throw new NotFoundException('Chat not found');
 
         // Проверка, что автор запроса — участник чата и не забанен
         const member = await this.chatMembersRepository.findOne({
-            where:{
-                chat:{id: chatId},
-                user:{id: user.id},
-                banned:false
+            where: {
+                chat: { id: chatId },
+                user: { id: user.id },
+                banned: false
             },
         });
         if (!member) throw new NotFoundException('You are not a member of this chat or you are banned');
@@ -80,9 +84,25 @@ export class MessagesService {
 
         // Преобразуем сущности в формат, удобный клиенту
         return messages.map(m => ({
+            id: m.id,
             sender: m.sender.name,
+            senderId: m.sender.id,
             text: m.text,
-            createdAt: m.createdAt
+            createdAt: m.createdAt,
+            editedAt: m.editedAt
         }));
+    }
+
+    async editMessage(messageId: number, newText: string, user: User) {
+        const message = await this.messagesRepository.findOne({
+            where: { id: messageId },
+            relations: ['sender']
+        });
+        if(!message) throw new NotFoundException('Message not found');
+        if(message.sender.id !== user.id) throw new ForbiddenException('You can edit only your messages');
+        message.text = newText;
+        message.editedAt = new Date();
+        await this.messagesRepository.save(message);
+        return message;
     }
 }

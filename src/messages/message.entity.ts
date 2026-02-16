@@ -24,4 +24,7 @@ export class Message {
 
   @ManyToOne(() => User)
   sender: User;
+
+  @Column({ nullable: true })
+  editedAt: Date;
 }
