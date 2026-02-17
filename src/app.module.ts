@@ -33,7 +33,7 @@ import { MessagesModule } from './messages/messages.module';
     UsersModule,
     AuthModule,
     ChatsModule,
-    MessagesModule,
+    MessagesModule
   ],
   controllers: [AppController],
   providers: [AppService],
